@@ -114,6 +114,24 @@ resource "aws_s3_bucket" "s3_cache" {
   }
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "s3_cache" {
+  count  = var.enabled && var.enable_s3_cache && var.s3_cache_expiration_days > 0 ? 1 : 0
+  bucket = aws_s3_bucket.s3_cache[0].id
+
+  rule {
+    id     = "cache_expiration"
+    status = "Enabled"
+
+    expiration {
+      days = var.s3_cache_expiration_days
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = var.s3_cache_expiration_days
+    }
+  }
+}
+
 resource "random_id" "this" {
   byte_length = 8
 }

@@ -74,6 +74,12 @@ variable "enable_s3_cache" {
   default     = true
 }
 
+variable "s3_cache_expiration_days" {
+  type        = number
+  description = "Number of days after which objects in the S3 cache bucket expire. Set to 0 to disable expiration."
+  default     = 30
+}
+
 variable "capacity_per_instance" {
   type        = number
   description = "The number of jobs that can be executed concurrently by a single instance."

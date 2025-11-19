@@ -97,3 +97,86 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "name_prefix" {
+  type        = string
+  description = "Prefix for resource names to enable multiple deployments in same AWS account"
+  default     = ""
+}
+
+variable "default_tags" {
+  type        = map(string)
+  description = "Default tags applied to all resources created by this module"
+  default     = {}
+}
+
+# Instance Requirements for Attribute-Based Instance Selection
+variable "use_attribute_based_instance_selection" {
+  type        = bool
+  description = "Use attribute-based instance selection instead of specific instance type"
+  default     = true
+}
+
+variable "vcpu_count_min" {
+  type        = number
+  description = "Minimum number of vCPUs for attribute-based instance selection"
+  default     = 2
+}
+
+variable "vcpu_count_max" {
+  type        = number
+  description = "Maximum number of vCPUs for attribute-based instance selection"
+  default     = 4
+}
+
+variable "memory_mib_min" {
+  type        = number
+  description = "Minimum memory in MiB for attribute-based instance selection"
+  default     = 4096
+}
+
+variable "memory_mib_max" {
+  type        = number
+  description = "Maximum memory in MiB for attribute-based instance selection"
+  default     = 8192
+}
+
+variable "burstable_performance" {
+  type        = string
+  description = "Burstable performance setting (included, excluded, required)"
+  default     = "excluded"
+  validation {
+    condition     = contains(["included", "excluded", "required"], var.burstable_performance)
+    error_message = "burstable_performance must be one of: included, excluded, required"
+  }
+}
+
+variable "instance_generations" {
+  type        = list(string)
+  description = "Instance generations to include (current or previous)"
+  default     = ["current"]
+  validation {
+    condition     = alltrue([for gen in var.instance_generations : contains(["current", "previous"], gen)])
+    error_message = "instance_generations must contain only 'current' or 'previous'"
+  }
+}
+
+variable "on_demand_percentage_above_base_capacity" {
+  type        = number
+  description = "Percentage of on-demand instances above base capacity (0-100). Set to 0 for all spot instances."
+  default     = 0
+  validation {
+    condition     = var.on_demand_percentage_above_base_capacity >= 0 && var.on_demand_percentage_above_base_capacity <= 100
+    error_message = "on_demand_percentage_above_base_capacity must be between 0 and 100"
+  }
+}
+
+variable "spot_allocation_strategy" {
+  type        = string
+  description = "Spot allocation strategy (lowest-price, capacity-optimized, price-capacity-optimized)"
+  default     = "price-capacity-optimized"
+  validation {
+    condition     = contains(["lowest-price", "capacity-optimized", "price-capacity-optimized"], var.spot_allocation_strategy)
+    error_message = "spot_allocation_strategy must be one of: lowest-price, capacity-optimized, price-capacity-optimized"
+  }
+}

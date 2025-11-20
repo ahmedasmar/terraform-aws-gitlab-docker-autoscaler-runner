@@ -16,7 +16,7 @@ This is a Terraform module that creates a GitLab Runner Docker autoscaler infras
 
 The module follows a two-tier architecture:
 1. **Manager Tier**: Single EC2 instance (`aws_instance.gitlab_runner`) that coordinates job distribution
-2. **Worker Tier**: Auto Scaling Group (`aws_autoscaling_group.gitlab-runners`) that provisions on-demand runner instances
+2. **Worker Tier**: Auto Scaling Group (`aws_autoscaling_group.gitlab_runners`) that provisions on-demand runner instances
 
 Key architectural decisions:
 - Uses spot instances for cost optimization

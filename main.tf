@@ -45,6 +45,13 @@ resource "aws_launch_template" "gitlab_runner" {
   vpc_security_group_ids = var.asg_security_groups
   # Note: instance_market_options removed - spot/on-demand mix is controlled by mixed_instances_policy
 
+  lifecycle {
+    precondition {
+      condition     = var.use_attribute_based_instance_selection || var.asg_runners_ec2_type != null
+      error_message = "asg_runners_ec2_type must be set when use_attribute_based_instance_selection is false. Ensure the instance type matches your AMI architecture (x86_64 or ARM64)."
+    }
+  }
+
   dynamic "iam_instance_profile" {
     for_each = var.asg_iam_instance_profile != null ? [var.asg_iam_instance_profile] : []
     content {
@@ -70,7 +77,9 @@ resource "aws_autoscaling_group" "gitlab_runners" {
   vpc_zone_identifier   = var.asg_subnets
   suspended_processes   = ["AZRebalance"]
   protect_from_scale_in = true
-  capacity_rebalance    = true
+  # capacity_rebalance disabled to prevent ASG from externally terminating instances
+  # which causes job failures with "instance unexpectedly removed" errors
+  capacity_rebalance = false
 
   # Runner instances use mixed_instances_policy for spot/on-demand control
   # Default: 100% spot (on_demand_percentage_above_base_capacity = 0)

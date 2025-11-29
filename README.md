@@ -131,6 +131,18 @@ When using attribute-based instance selection, ensure your `cpu_manufacturers` s
 | terraform | >= 1.0 |
 | aws | >= 5.72 |
 
+## Breaking Changes
+
+### S3 Cache Lifecycle Configuration
+
+The S3 cache bucket lifecycle rule now uses an empty `filter {}` block instead of the deprecated `prefix` argument. This is required for AWS provider >= 5.x. If you're upgrading from an older version, Terraform will recreate the lifecycle configuration.
+
+### Attribute-Based Instance Selection (Default)
+
+This module now defaults to `use_attribute_based_instance_selection = true`. If you were previously using a specific instance type, either:
+1. Set `use_attribute_based_instance_selection = false` and specify `asg_runners_ec2_type`
+2. Or migrate to attribute-based selection (recommended for Spot instances)
+
 ## License
 
 MIT

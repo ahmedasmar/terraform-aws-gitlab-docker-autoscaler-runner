@@ -58,8 +58,12 @@ variable "asg_runners_ami" {
 
 variable "asg_runners_ec2_type" {
   type        = string
-  description = "EC2 instance type for scaled out runners"
-  default     = "t2.medium"
+  description = "EC2 instance type for scaled out runners. Required when use_attribute_based_instance_selection is false. Must match AMI architecture."
+  default     = null
+  validation {
+    condition     = var.asg_runners_ec2_type == null || can(regex("^[a-z][a-z0-9]*\\.[a-z0-9]+$", var.asg_runners_ec2_type))
+    error_message = "asg_runners_ec2_type must be null or a valid EC2 instance type (e.g., m6i.medium, m7g.medium)"
+  }
 }
 
 variable "asg_security_groups" {
@@ -121,24 +125,40 @@ variable "vcpu_count_min" {
   type        = number
   description = "Minimum number of vCPUs for attribute-based instance selection"
   default     = 2
+  validation {
+    condition     = var.vcpu_count_min >= 1
+    error_message = "vcpu_count_min must be at least 1"
+  }
 }
 
 variable "vcpu_count_max" {
   type        = number
   description = "Maximum number of vCPUs for attribute-based instance selection"
   default     = 4
+  validation {
+    condition     = var.vcpu_count_max >= 1
+    error_message = "vcpu_count_max must be at least 1"
+  }
 }
 
 variable "memory_mib_min" {
   type        = number
   description = "Minimum memory in MiB for attribute-based instance selection"
   default     = 4096
+  validation {
+    condition     = var.memory_mib_min >= 512
+    error_message = "memory_mib_min must be at least 512 MiB"
+  }
 }
 
 variable "memory_mib_max" {
   type        = number
   description = "Maximum memory in MiB for attribute-based instance selection"
   default     = 8192
+  validation {
+    condition     = var.memory_mib_max >= 512
+    error_message = "memory_mib_max must be at least 512 MiB"
+  }
 }
 
 variable "allowed_instance_types" {

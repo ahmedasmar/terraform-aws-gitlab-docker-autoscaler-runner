@@ -17,6 +17,7 @@
             "Effect": "Allow",
             "Action": [
                 "autoscaling:SetDesiredCapacity",
+                "autoscaling:SetInstanceProtection",
                 "autoscaling:TerminateInstanceInAutoScalingGroup"
             ],
             "Resource": "${autoscaling_group_arn}"
@@ -25,7 +26,8 @@
             "Effect": "Allow",
             "Action": [
                 "autoscaling:DescribeAutoScalingGroups",
-                "ec2:DescribeInstances"
+                "ec2:DescribeInstances",
+                "ec2:DescribeSpotInstanceRequests"
             ],
             "Resource": "*"
         },

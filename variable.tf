@@ -10,6 +10,18 @@ variable "enabled" {
   description = "Enable or disable the module and its resources"
 }
 
+variable "name_prefix" {
+  type        = string
+  description = "Optional suffix to make resource names unique per deployment"
+  default     = ""
+}
+
+variable "default_tags" {
+  description = "Map of default tags applied via the AWS provider to all supported resources"
+  type        = map(string)
+  default     = {}
+}
+
 variable "asg_max_size" {
   type        = number
   description = "Maximum size of instances"
@@ -64,7 +76,7 @@ variable "manager_security_groups" {
 
 variable "asg_iam_instance_profile" {
   type        = string
-  description = "IAM instance profile for autoscaled runners"
+  description = "IAM instance profile (name or ARN) for autoscaled runners"
   default     = null
 }
 

@@ -139,6 +139,10 @@ variable "vcpu_count_max" {
     condition     = var.vcpu_count_max >= 1
     error_message = "vcpu_count_max must be at least 1"
   }
+  validation {
+    condition     = var.vcpu_count_max >= var.vcpu_count_min
+    error_message = "vcpu_count_max must be greater than or equal to vcpu_count_min"
+  }
 }
 
 variable "memory_mib_min" {
@@ -158,6 +162,10 @@ variable "memory_mib_max" {
   validation {
     condition     = var.memory_mib_max >= 512
     error_message = "memory_mib_max must be at least 512 MiB"
+  }
+  validation {
+    condition     = var.memory_mib_max >= var.memory_mib_min
+    error_message = "memory_mib_max must be greater than or equal to memory_mib_min"
   }
 }
 

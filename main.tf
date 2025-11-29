@@ -38,12 +38,10 @@ resource "aws_iam_role_policy_attachments_exclusive" "gitlab_runner_manager" {
 }
 
 resource "aws_launch_template" "gitlab_runner" {
-  count                  = var.enabled ? 1 : 0
-  image_id               = local.asg_runners_ami
+  count    = var.enabled ? 1 : 0
+  image_id = local.asg_runners_ami
   # Only set instance_type when not using attribute-based instance selection
   instance_type          = var.use_attribute_based_instance_selection ? null : var.asg_runners_ec2_type
-  image_id               = local.asg_runners_ami
-  instance_type          = var.asg_runners_ec2_type
   vpc_security_group_ids = var.asg_security_groups
   # Note: instance_market_options removed - spot/on-demand mix is controlled by mixed_instances_policy
 
@@ -85,8 +83,8 @@ resource "aws_autoscaling_group" "gitlab_runners" {
 
     launch_template {
       launch_template_specification {
-        launch_template_id = aws_launch_template.gitlab-runner[0].id
-        version           = "$Latest"
+        launch_template_id = aws_launch_template.gitlab_runner[0].id
+        version            = "$Latest"
       }
 
       # Override for attribute-based instance selection
@@ -104,8 +102,11 @@ resource "aws_autoscaling_group" "gitlab_runners" {
               max = var.memory_mib_max
             }
 
-            burstable_performance = var.burstable_performance
-            instance_generations  = var.instance_generations
+            allowed_instance_types = var.allowed_instance_types
+            burstable_performance  = var.burstable_performance
+            cpu_manufacturers      = var.cpu_manufacturers
+            instance_generations   = var.instance_generations
+            local_storage_types    = var.local_storage_types
           }
         }
       }

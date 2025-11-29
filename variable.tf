@@ -110,22 +110,10 @@ variable "tags" {
   default     = {}
 }
 
-variable "name_prefix" {
-  type        = string
-  description = "Prefix for resource names to enable multiple deployments in same AWS account"
-  default     = ""
-}
-
-variable "default_tags" {
-  type        = map(string)
-  description = "Default tags applied to all resources created by this module"
-  default     = {}
-}
-
 # Instance Requirements for Attribute-Based Instance Selection
 variable "use_attribute_based_instance_selection" {
   type        = bool
-  description = "Use attribute-based instance selection instead of specific instance type"
+  description = "Use attribute-based instance selection instead of specific instance type. Recommended for Spot instances to improve availability and reduce interruptions."
   default     = true
 }
 
@@ -153,6 +141,12 @@ variable "memory_mib_max" {
   default     = 8192
 }
 
+variable "allowed_instance_types" {
+  type        = list(string)
+  description = "List of instance type patterns to allow (e.g., c*, m*, r*). Limits selection to compute, general purpose, and memory optimized instances."
+  default     = ["c*", "m*", "r*"]
+}
+
 variable "burstable_performance" {
   type        = string
   description = "Burstable performance setting (included, excluded, required)"
@@ -163,6 +157,16 @@ variable "burstable_performance" {
   }
 }
 
+variable "cpu_manufacturers" {
+  type        = list(string)
+  description = "List of CPU manufacturers to allow (intel, amd, amazon-web-services). Use intel/amd for x86_64, amazon-web-services for ARM64/Graviton. Should match your AMI architecture."
+  default     = ["intel", "amd", "amazon-web-services"]
+  validation {
+    condition     = alltrue([for m in var.cpu_manufacturers : contains(["intel", "amd", "amazon-web-services"], m)])
+    error_message = "cpu_manufacturers must contain only 'intel', 'amd', or 'amazon-web-services'"
+  }
+}
+
 variable "instance_generations" {
   type        = list(string)
   description = "Instance generations to include (current or previous)"
@@ -170,6 +174,16 @@ variable "instance_generations" {
   validation {
     condition     = alltrue([for gen in var.instance_generations : contains(["current", "previous"], gen)])
     error_message = "instance_generations must contain only 'current' or 'previous'"
+  }
+}
+
+variable "local_storage_types" {
+  type        = list(string)
+  description = "List of local storage types to allow (hdd, ssd). SSD recommended for CI/CD workloads."
+  default     = ["ssd"]
+  validation {
+    condition     = alltrue([for t in var.local_storage_types : contains(["hdd", "ssd"], t)])
+    error_message = "local_storage_types must contain only 'hdd' or 'ssd'"
   }
 }
 

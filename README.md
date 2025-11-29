@@ -98,7 +98,7 @@ module "gitlab_runner" {
 | Name | Description | Type | Default |
 |------|-------------|------|---------|
 | `use_attribute_based_instance_selection` | Use attribute-based selection (recommended for Spot) | `bool` | `true` |
-| `asg_runners_ec2_type` | Specific instance type (when not using attribute-based) | `string` | `"t2.medium"` |
+| `asg_runners_ec2_type` | Specific instance type (when not using attribute-based) | `string` | `null` |
 | `vcpu_count_min` | Minimum vCPUs | `number` | `2` |
 | `vcpu_count_max` | Maximum vCPUs | `number` | `4` |
 | `memory_mib_min` | Minimum memory (MiB) | `number` | `4096` |

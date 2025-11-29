@@ -128,7 +128,7 @@ When using attribute-based instance selection, ensure your `cpu_manufacturers` s
 
 | Name | Version |
 |------|---------|
-| terraform | >= 1.0 |
+| terraform | >= 1.9 |
 | aws | >= 5.72 |
 
 ## Breaking Changes

@@ -1,10 +1,10 @@
-resource "aws_iam_policy" "gitlab-runner-manager-policy" {
+resource "aws_iam_policy" "gitlab_runner_manager_policy" {
   count  = var.enabled && var.create_manager ? 1 : 0
   name   = local.iam_policy_name
   policy = jsonencode(local.manager_policy)
 }
 
-resource "aws_iam_role" "gitlab-runner-manager-role" {
+resource "aws_iam_role" "gitlab_runner_manager_role" {
   count = var.enabled && var.create_manager ? 1 : 0
   name  = local.iam_role_name
   assume_role_policy = jsonencode({
@@ -20,28 +20,38 @@ resource "aws_iam_role" "gitlab-runner-manager-role" {
       },
     ]
   })
-  managed_policy_arns = [aws_iam_policy.gitlab-runner-manager-policy[0].arn, "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"]
-
 }
 
-resource "aws_iam_instance_profile" "gitlab-runner-manager-profile" {
+resource "aws_iam_instance_profile" "gitlab_runner_manager_profile" {
   count = var.enabled && var.create_manager ? 1 : 0
   name  = local.iam_profile_name
-  role  = aws_iam_role.gitlab-runner-manager-role[0].name
+  role  = aws_iam_role.gitlab_runner_manager_role[0].name
 }
 
-resource "aws_launch_template" "gitlab-runner" {
+resource "aws_iam_role_policy_attachments_exclusive" "gitlab_runner_manager" {
+  count     = var.enabled && var.create_manager ? 1 : 0
+  role_name = aws_iam_role.gitlab_runner_manager_role[0].name
+  policy_arns = [
+    aws_iam_policy.gitlab_runner_manager_policy[0].arn,
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+  ]
+}
+
+resource "aws_launch_template" "gitlab_runner" {
   count                  = var.enabled ? 1 : 0
-  image_id               = local.asg-runners-ami
+  image_id               = local.asg_runners_ami
   # Only set instance_type when not using attribute-based instance selection
   instance_type          = var.use_attribute_based_instance_selection ? null : var.asg_runners_ec2_type
+  image_id               = local.asg_runners_ami
+  instance_type          = var.asg_runners_ec2_type
   vpc_security_group_ids = var.asg_security_groups
   # Note: instance_market_options removed - spot/on-demand mix is controlled by mixed_instances_policy
 
   dynamic "iam_instance_profile" {
-    for_each = var.asg_iam_instance_profile != null ? var.asg_iam_instance_profile[*] : []
+    for_each = var.asg_iam_instance_profile != null ? [var.asg_iam_instance_profile] : []
     content {
-      arn = iam_instance_profile.value
+      arn  = startswith(iam_instance_profile.value, "arn:") ? iam_instance_profile.value : null
+      name = startswith(iam_instance_profile.value, "arn:") ? null : iam_instance_profile.value
     }
   }
 
@@ -54,7 +64,7 @@ resource "aws_launch_template" "gitlab-runner" {
 
   }
 }
-resource "aws_autoscaling_group" "gitlab-runners" {
+resource "aws_autoscaling_group" "gitlab_runners" {
   count                 = var.enabled ? 1 : 0
   max_size              = var.asg_max_size
   min_size              = 0
@@ -121,7 +131,7 @@ resource "aws_instance" "gitlab_runner" {
   count                  = var.enabled && var.create_manager && var.auth_token != null ? 1 : 0
   ami                    = data.aws_ami.latest_amazon_linux_2023.image_id
   instance_type          = var.manager_ec2_type
-  iam_instance_profile   = aws_iam_instance_profile.gitlab-runner-manager-profile[0].name
+  iam_instance_profile   = aws_iam_instance_profile.gitlab_runner_manager_profile[0].name
   subnet_id              = var.asg_subnets[0]
   vpc_security_group_ids = var.manager_security_groups
   # Manager instance is always on-demand (no instance_market_options)
@@ -135,8 +145,8 @@ resource "aws_instance" "gitlab_runner" {
     {
       enable_s3_cache        = var.enable_s3_cache
       s3_bucket_name         = var.enable_s3_cache ? aws_s3_bucket.s3_cache[0].id : null
-      aws_region             = data.aws_region.current.name
-      autoscaling_group_name = aws_autoscaling_group.gitlab-runners[0].name
+      aws_region             = data.aws_region.current.id
+      autoscaling_group_name = aws_autoscaling_group.gitlab_runners[0].name
       auth_token             = var.auth_token
       concurrent_limit       = local.concurrent_limit
       max_instances          = var.asg_max_size

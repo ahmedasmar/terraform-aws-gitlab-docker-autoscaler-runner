@@ -3,13 +3,15 @@
 yum update -y
 yum install -y docker git
 
-curl -L --output /usr/bin/fleeting-plugin-aws https://gitlab.com/gitlab-org/fleeting/fleeting-plugin-aws/-/releases/v0.4.0/downloads/fleeting-plugin-aws-linux-amd64
-# Give it permission to execute
-chmod +x /usr/bin/fleeting-plugin-aws
+# Fleeting plugin will be installed automatically via gitlab-runner fleeting install
+# No need to manually download the plugin for GitLab Runner 16.11+
 
 # Install GitLab Runner
 curl -sL "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.rpm.sh" | sudo bash
 yum install -y gitlab-runner
+
+# Install the AWS fleeting plugin
+gitlab-runner fleeting install
 
 # Create default AWS config file
 aws_config=$(cat <<EOF
@@ -27,7 +29,7 @@ runner_config=$(cat <<EOF
   [runners.docker]
   # Autoscaler config
   [runners.autoscaler]
-    plugin = "fleeting-plugin-aws"
+    plugin = "aws"
 
     capacity_per_instance = ${capacity_per_instance}
     max_use_count = 1

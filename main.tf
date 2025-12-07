@@ -38,12 +38,18 @@ resource "aws_iam_role_policy_attachments_exclusive" "gitlab_runner_manager" {
 }
 
 resource "aws_launch_template" "gitlab_runner" {
-  count                  = var.enabled ? 1 : 0
-  image_id               = local.asg_runners_ami
-  instance_type          = var.asg_runners_ec2_type
+  count    = var.enabled ? 1 : 0
+  image_id = local.asg_runners_ami
+  # Only set instance_type when not using attribute-based instance selection
+  instance_type          = var.use_attribute_based_instance_selection ? null : var.asg_runners_ec2_type
   vpc_security_group_ids = var.asg_security_groups
-  instance_market_options {
-    market_type = "spot"
+  # Note: instance_market_options removed - spot/on-demand mix is controlled by mixed_instances_policy
+
+  lifecycle {
+    precondition {
+      condition     = var.use_attribute_based_instance_selection || var.asg_runners_ec2_type != null
+      error_message = "asg_runners_ec2_type must be set when use_attribute_based_instance_selection is false. Ensure the instance type matches your AMI architecture (x86_64 or ARM64)."
+    }
   }
 
   dynamic "iam_instance_profile" {
@@ -71,10 +77,59 @@ resource "aws_autoscaling_group" "gitlab_runners" {
   vpc_zone_identifier   = var.asg_subnets
   suspended_processes   = ["AZRebalance"]
   protect_from_scale_in = true
-  launch_template {
-    id      = aws_launch_template.gitlab_runner[0].id
-    version = "$Latest"
+  # capacity_rebalance disabled to prevent ASG from externally terminating instances
+  # which causes job failures with "instance unexpectedly removed" errors
+  capacity_rebalance = false
+
+  # Runner instances use mixed_instances_policy for spot/on-demand control
+  # Default: 100% spot (on_demand_percentage_above_base_capacity = 0)
+  mixed_instances_policy {
+    instances_distribution {
+      on_demand_base_capacity                  = 0
+      on_demand_percentage_above_base_capacity = var.on_demand_percentage_above_base_capacity
+      spot_allocation_strategy                 = var.spot_allocation_strategy
+    }
+
+    launch_template {
+      launch_template_specification {
+        launch_template_id = aws_launch_template.gitlab_runner[0].id
+        version            = "$Latest"
+      }
+
+      # Override for attribute-based instance selection
+      dynamic "override" {
+        for_each = var.use_attribute_based_instance_selection ? [1] : []
+        content {
+          instance_requirements {
+            vcpu_count {
+              min = var.vcpu_count_min
+              max = var.vcpu_count_max
+            }
+
+            memory_mib {
+              min = var.memory_mib_min
+              max = var.memory_mib_max
+            }
+
+            allowed_instance_types = var.allowed_instance_types
+            burstable_performance  = var.burstable_performance
+            cpu_manufacturers      = var.cpu_manufacturers
+            instance_generations   = var.instance_generations
+            local_storage_types    = var.local_storage_types
+          }
+        }
+      }
+
+      # Override for specific instance type mode
+      dynamic "override" {
+        for_each = var.use_attribute_based_instance_selection ? [] : [1]
+        content {
+          instance_type = var.asg_runners_ec2_type
+        }
+      }
+    }
   }
+
   lifecycle {
     ignore_changes = [
       desired_capacity
@@ -89,10 +144,11 @@ resource "aws_instance" "gitlab_runner" {
   iam_instance_profile   = aws_iam_instance_profile.gitlab_runner_manager_profile[0].name
   subnet_id              = var.asg_subnets[0]
   vpc_security_group_ids = var.manager_security_groups
+  # Manager instance is always on-demand (no instance_market_options)
   # vpc_security_group_ids = [aws_security_group.allow_ssh_docker.id]
-  tags = {
-    Name = "Gitlab runner autoscaling manager"
-  }
+  tags = merge(var.tags, {
+    Name = "Gitlab runner autoscaling manager${local.name_suffix}"
+  })
   user_data_replace_on_change = true
   # User data script to install Docker and GitLab Runner
   user_data = templatefile("${path.module}/user-data/manager-user-data.sh.tftpl",
@@ -117,9 +173,10 @@ resource "aws_instance" "gitlab_runner" {
 resource "aws_s3_bucket" "s3_cache" {
   count  = var.enabled && var.enable_s3_cache ? 1 : 0
   bucket = "gitlab-shared-cache-${random_id.this.hex}"
-  tags = {
+  tags = merge(var.tags, {
     Service = "Gitlab runner s3 shared cache"
-  }
+    Name    = "gitlab-shared-cache-${random_id.this.hex}"
+  })
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "s3_cache" {
@@ -129,6 +186,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "s3_cache" {
   rule {
     id     = "cache_expiration"
     status = "Enabled"
+
+    filter {}
 
     expiration {
       days = var.s3_cache_expiration_days

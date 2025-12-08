@@ -111,11 +111,13 @@ resource "aws_autoscaling_group" "gitlab_runners" {
               max = var.memory_mib_max
             }
 
-            allowed_instance_types = var.allowed_instance_types
-            burstable_performance  = var.burstable_performance
-            cpu_manufacturers      = var.cpu_manufacturers
-            instance_generations   = var.instance_generations
-            local_storage_types    = var.local_storage_types
+            allowed_instance_types  = var.allowed_instance_types
+            excluded_instance_types = var.excluded_instance_types
+            burstable_performance   = var.burstable_performance
+            cpu_manufacturers       = var.cpu_manufacturers
+            instance_generations    = var.instance_generations
+            local_storage           = var.local_storage
+            local_storage_types     = var.local_storage == "included" ? var.local_storage_types : []
           }
         }
       }

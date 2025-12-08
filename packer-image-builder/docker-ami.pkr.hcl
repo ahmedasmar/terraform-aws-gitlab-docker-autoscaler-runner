@@ -1,18 +1,15 @@
+data "amazon-parameterstore" "al2023_arm64" {
+  name   = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64"
+  region = "us-east-1"
+}
+
 source "amazon-ebs" "amazon-linux-docker" {
   ami_name      = "amazon-linux-docker-{{timestamp}}"
-  instance_type = "t2.small"
+  instance_type = "t4g.small"
   region        = "us-east-1"
-  subnet_id     = "subnet-0fdb61294d3c2541c"
-  source_ami_filter {
-    filters = {
-      name                = "al2023-ami-2023.*-x86_64"
-      root-device-type    = "ebs"
-      virtualization-type = "hvm"
-    }
-    most_recent = true
-    owners      = ["amazon"]
-  }
-  ssh_username = "ec2-user"
+  subnet_id     = "subnet-09be4c4c398901917"
+  source_ami    = data.amazon-parameterstore.al2023_arm64.value
+  ssh_username  = "ec2-user"
 }
 
 build {

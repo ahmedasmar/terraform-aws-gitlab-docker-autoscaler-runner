@@ -171,14 +171,20 @@ variable "memory_mib_max" {
 
 variable "allowed_instance_types" {
   type        = list(string)
-  description = "List of instance type patterns to allow (e.g., c*, m*, r*). Limits selection to compute, general purpose, and memory optimized instances."
-  default     = ["c*", "m*", "r*"]
+  description = "List of instance type patterns to allow. Defaults to compute-optimized and general-purpose families suited for CI/CD workloads."
+  default     = ["c*", "m*", "t*"]
+}
+
+variable "excluded_instance_types" {
+  type        = list(string)
+  description = "List of instance type patterns to exclude from attribute-based selection. Defaults block instance-store (d), high-network (n), and storage-optimized (i) families."
+  default     = ["*d.*", "*n.*", "i*", "z*"]
 }
 
 variable "burstable_performance" {
   type        = string
-  description = "Burstable performance setting (included, excluded, required)"
-  default     = "excluded"
+  description = "Burstable performance setting (included, excluded, required). Included by default for cost-effective short-lived CI/CD jobs."
+  default     = "included"
   validation {
     condition     = contains(["included", "excluded", "required"], var.burstable_performance)
     error_message = "burstable_performance must be one of: included, excluded, required"
@@ -212,6 +218,16 @@ variable "local_storage_types" {
   validation {
     condition     = alltrue([for t in var.local_storage_types : contains(["hdd", "ssd"], t)])
     error_message = "local_storage_types must contain only 'hdd' or 'ssd'"
+  }
+}
+
+variable "local_storage" {
+  type        = string
+  description = "Local storage preference for attribute-based selection (included, excluded, required). Set to excluded to force EBS-only instance types (no instance store/NVMe variants like m5d/m5dn)."
+  default     = "excluded"
+  validation {
+    condition     = contains(["included", "excluded", "required"], var.local_storage)
+    error_message = "local_storage must be one of: included, excluded, required"
   }
 }
 

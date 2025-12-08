@@ -148,7 +148,7 @@ variable "vcpu_count_max" {
 variable "memory_mib_min" {
   type        = number
   description = "Minimum memory in MiB for attribute-based instance selection"
-  default     = 4096
+  default     = 8192
   validation {
     condition     = var.memory_mib_min >= 512
     error_message = "memory_mib_min must be at least 512 MiB"
@@ -158,7 +158,7 @@ variable "memory_mib_min" {
 variable "memory_mib_max" {
   type        = number
   description = "Maximum memory in MiB for attribute-based instance selection"
-  default     = 8192
+  default     = 16384
   validation {
     condition     = var.memory_mib_max >= 512
     error_message = "memory_mib_max must be at least 512 MiB"
@@ -177,8 +177,18 @@ variable "allowed_instance_types" {
 
 variable "excluded_instance_types" {
   type        = list(string)
-  description = "List of instance type patterns to exclude from attribute-based selection. Defaults block instance-store (d), high-network (n), and storage-optimized (i) families."
-  default     = ["*d.*", "*n.*", "i*", "z*"]
+  description = "List of instance type patterns to exclude from attribute-based selection. Defaults block instance-store (d), high-network (n), storage-optimized (i), high-frequency (z), memory-optimized (r), and legacy burstable (t2) families."
+  default     = ["*d.*", "*n.*", "i*", "z*", "r*", "t2.*"]
+}
+
+variable "accelerator_count_max" {
+  type        = number
+  description = "Optional maximum accelerator count. Set to 0 to exclude GPU/accelerator types; set to null to allow accelerators."
+  default     = 0
+  validation {
+    condition     = var.accelerator_count_max == null || var.accelerator_count_max >= 0
+    error_message = "accelerator_count_max must be null or a non-negative number"
+  }
 }
 
 variable "burstable_performance" {
@@ -228,6 +238,16 @@ variable "local_storage" {
   validation {
     condition     = contains(["included", "excluded", "required"], var.local_storage)
     error_message = "local_storage must be one of: included, excluded, required"
+  }
+}
+
+variable "network_bandwidth_gbps_max" {
+  type        = number
+  description = "Optional cap on network bandwidth (Gbps) in attribute-based selection. Set to null to allow any bandwidth."
+  default     = null
+  validation {
+    condition     = var.network_bandwidth_gbps_max == null || var.network_bandwidth_gbps_max > 0
+    error_message = "network_bandwidth_gbps_max must be null or greater than 0"
   }
 }
 

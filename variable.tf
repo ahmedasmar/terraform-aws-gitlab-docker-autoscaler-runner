@@ -102,6 +102,22 @@ variable "capacity_per_instance" {
   default     = 1
 }
 
+variable "autoscaler_idle_count" {
+  type        = number
+  description = "Number of idle instances the autoscaler keeps warm. Set to 0 for no warm pool."
+  default     = 0
+  validation {
+    condition     = var.autoscaler_idle_count >= 0
+    error_message = "autoscaler_idle_count must be greater than or equal to 0"
+  }
+}
+
+variable "autoscaler_idle_time" {
+  type        = string
+  description = "Idle time duration (e.g., 20m0s) for autoscaler warm instances."
+  default     = "20m0s"
+}
+
 variable "extra_policy_entries" {
   description = "Optional extra entries to add to the policy"
   type        = map(any)

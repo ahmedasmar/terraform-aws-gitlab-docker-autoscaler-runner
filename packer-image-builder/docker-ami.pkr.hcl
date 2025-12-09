@@ -7,9 +7,16 @@ source "amazon-ebs" "amazon-linux-docker" {
   ami_name      = "amazon-linux-docker-{{timestamp}}"
   instance_type = "t4g.small"
   region        = "us-east-1"
-  subnet_id     = "subnet-09be4c4c398901917"
+  subnet_id     = "subnet-06c0519eba0b0386c"
   source_ami    = data.amazon-parameterstore.al2023_arm64.value
   ssh_username  = "ec2-user"
+
+  launch_block_device_mappings {
+    device_name           = "/dev/xvda"
+    volume_size           = 50
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
 }
 
 build {

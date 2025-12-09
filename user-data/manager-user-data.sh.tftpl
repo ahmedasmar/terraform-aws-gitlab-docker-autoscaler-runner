@@ -43,8 +43,8 @@ runner_config=$(cat <<EOF
       use_external_addr = true
 
     [[runners.autoscaler.policy]]
-      idle_count = 0
-      idle_time = "20m0s"
+      idle_count = ${autoscaler_idle_count}
+      idle_time = "${autoscaler_idle_time}"
 
 EOF
 )

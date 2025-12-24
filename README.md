@@ -130,6 +130,14 @@ When using attribute-based instance selection, ensure your `cpu_manufacturers` s
 |------|---------|
 | terraform | >= 1.9 |
 | aws | >= 5.72 |
+| random | >= 3.0 |
+
+> **Note:** This module has been tested with:
+> - Terraform 1.9+
+> - AWS Provider 5.72 - 6.21
+> - Random Provider 3.0 - 3.7
+>
+> While the module allows newer versions, we recommend testing in your environment before upgrading to major provider versions.
 
 ## Breaking Changes
 

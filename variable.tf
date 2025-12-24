@@ -171,14 +171,14 @@ variable "memory_mib_max" {
 
 variable "allowed_instance_types" {
   type        = list(string)
-  description = "List of instance type patterns to allow. Defaults to compute-optimized and general-purpose families suited for CI/CD workloads."
-  default     = ["c*", "m*", "t*"]
+  description = "List of instance type patterns to allow. Defaults to compute-optimized, general-purpose, and memory-optimized families suited for CI/CD workloads."
+  default     = ["c*", "m*", "r*"]
 }
 
 variable "excluded_instance_types" {
   type        = list(string)
-  description = "List of instance type patterns to exclude from attribute-based selection. Defaults block instance-store (d), high-network (n), storage-optimized (i), high-frequency (z), memory-optimized (r), and legacy burstable (t2) families."
-  default     = ["*d.*", "*n.*", "i*", "z*", "r*", "t2.*"]
+  description = "List of instance type patterns to exclude from attribute-based selection. Empty by default to allow all types matching allowed_instance_types."
+  default     = []
 }
 
 variable "accelerator_count_max" {
@@ -233,8 +233,8 @@ variable "local_storage_types" {
 
 variable "local_storage" {
   type        = string
-  description = "Local storage preference for attribute-based selection (included, excluded, required). Set to excluded to force EBS-only instance types (no instance store/NVMe variants like m5d/m5dn)."
-  default     = "excluded"
+  description = "Local storage preference for attribute-based selection (included, excluded, required). Set to included to allow instance store variants (c6gd, m5d, etc.) for potentially better Spot availability."
+  default     = "included"
   validation {
     condition     = contains(["included", "excluded", "required"], var.local_storage)
     error_message = "local_storage must be one of: included, excluded, required"

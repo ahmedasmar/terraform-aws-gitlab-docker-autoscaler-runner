@@ -27,9 +27,9 @@ locals {
 
   # IAM instance profile for ASG runners: accept name or ARN
   asg_iam_instance_profile_is_arn = var.asg_iam_instance_profile != null && can(regex("^arn:", var.asg_iam_instance_profile))
-  asg_iam_instance_profile_name = var.asg_iam_instance_profile != null && !local.asg_iam_instance_profile_is_arn ? var.asg_iam_instance_profile : (
+  asg_iam_instance_profile_name = var.asg_iam_instance_profile == null ? (
     var.enabled ? aws_iam_instance_profile.gitlab_runner_asg_profile[0].name : null
-  )
+  ) : (local.asg_iam_instance_profile_is_arn ? null : var.asg_iam_instance_profile)
   asg_iam_instance_profile_arn = local.asg_iam_instance_profile_is_arn ? var.asg_iam_instance_profile : null
 
   base_policy = var.enabled ? templatefile("${path.module}/policies/instance-docker-autoscaler-policy.json.tftpl",

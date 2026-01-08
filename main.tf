@@ -137,6 +137,7 @@ resource "aws_launch_template" "gitlab_runner" {
 
   iam_instance_profile {
     name = local.asg_iam_instance_profile_name
+    arn  = local.asg_iam_instance_profile_arn
   }
 
   dynamic "tag_specifications" {

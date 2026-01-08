@@ -17,18 +17,20 @@ locals {
 
   subnet_vpc_ids          = [for subnet in data.aws_subnet.asg : subnet.vpc_id]
   subnet_vpc_ids_distinct = distinct(local.subnet_vpc_ids)
-  vpc_id_from_subnets = length(local.subnet_vpc_ids_distinct) == 1 ? local.subnet_vpc_ids_distinct[0] : null
-  vpc_id_effective = (var.vpc_id != null && var.vpc_id != "") ? var.vpc_id : local.vpc_id_from_subnets
+  vpc_id_from_subnets     = length(local.subnet_vpc_ids_distinct) == 1 ? local.subnet_vpc_ids_distinct[0] : null
+  vpc_id_effective        = (var.vpc_id != null && var.vpc_id != "") ? var.vpc_id : local.vpc_id_from_subnets
 
   # Combined security groups: module-created SG + user-provided SGs
-  module_security_group = var.enabled && local.create_security_group ? [aws_security_group.gitlab_runner[0].id] : []
-  asg_security_groups   = concat(local.module_security_group, var.asg_security_groups)
+  module_security_group   = var.enabled && local.create_security_group ? [aws_security_group.gitlab_runner[0].id] : []
+  asg_security_groups     = concat(local.module_security_group, var.asg_security_groups)
   manager_security_groups = concat(local.module_security_group, var.manager_security_groups)
 
-  # IAM instance profile for ASG runners: use module-created or user-provided
-  asg_iam_instance_profile_name = var.asg_iam_instance_profile != null ? var.asg_iam_instance_profile : (
+  # IAM instance profile for ASG runners: accept name or ARN
+  asg_iam_instance_profile_is_arn = var.asg_iam_instance_profile != null && can(regex("^arn:", var.asg_iam_instance_profile))
+  asg_iam_instance_profile_name = var.asg_iam_instance_profile != null && !local.asg_iam_instance_profile_is_arn ? var.asg_iam_instance_profile : (
     var.enabled ? aws_iam_instance_profile.gitlab_runner_asg_profile[0].name : null
   )
+  asg_iam_instance_profile_arn = local.asg_iam_instance_profile_is_arn ? var.asg_iam_instance_profile : null
 
   base_policy = var.enabled ? templatefile("${path.module}/policies/instance-docker-autoscaler-policy.json.tftpl",
     {

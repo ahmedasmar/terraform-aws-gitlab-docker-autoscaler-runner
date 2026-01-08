@@ -29,7 +29,7 @@ variable "asg_max_size" {
 
 variable "vpc_id" {
   type        = string
-  description = "VPC ID. Required when create_security_group is true."
+  description = "VPC ID. Required when create_security_group is true unless it can be derived from asg_subnets in a single VPC."
   default     = null
 }
 

@@ -3,7 +3,7 @@ resource "aws_security_group" "gitlab_runner" {
   count       = var.enabled && local.create_security_group ? 1 : 0
   name        = "gitlab-runner-sg${local.name_suffix}"
   description = "Security group for GitLab Runner manager and ASG runners communication"
-  vpc_id      = var.vpc_id
+  vpc_id      = local.vpc_id_effective
 
   tags = merge(var.tags, {
     Name = "gitlab-runner-sg${local.name_suffix}"
@@ -11,8 +11,8 @@ resource "aws_security_group" "gitlab_runner" {
 
   lifecycle {
     precondition {
-      condition     = var.vpc_id != null && var.vpc_id != ""
-      error_message = "vpc_id is required when create_security_group is true."
+      condition     = local.vpc_id_effective != null && local.vpc_id_effective != ""
+      error_message = "vpc_id is required when create_security_group is true unless it can be derived from asg_subnets in a single VPC."
     }
   }
 }

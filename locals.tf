@@ -15,6 +15,11 @@ locals {
     length(var.asg_security_groups) == 0 || length(var.manager_security_groups) == 0
   )
 
+  subnet_vpc_ids          = [for subnet in data.aws_subnet.asg : subnet.vpc_id]
+  subnet_vpc_ids_distinct = distinct(local.subnet_vpc_ids)
+  vpc_id_from_subnets = length(local.subnet_vpc_ids_distinct) == 1 ? local.subnet_vpc_ids_distinct[0] : null
+  vpc_id_effective = (var.vpc_id != null && var.vpc_id != "") ? var.vpc_id : local.vpc_id_from_subnets
+
   # Combined security groups: module-created SG + user-provided SGs
   module_security_group = var.enabled && local.create_security_group ? [aws_security_group.gitlab_runner[0].id] : []
   asg_security_groups   = concat(local.module_security_group, var.asg_security_groups)

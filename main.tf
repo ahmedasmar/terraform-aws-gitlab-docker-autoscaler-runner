@@ -1,3 +1,46 @@
+# Security group for manager and runner communication
+resource "aws_security_group" "gitlab_runner" {
+  count       = var.enabled && local.create_security_group ? 1 : 0
+  name        = "gitlab-runner-sg${local.name_suffix}"
+  description = "Security group for GitLab Runner manager and ASG runners communication"
+  vpc_id      = var.vpc_id
+
+  tags = merge(var.tags, {
+    Name = "gitlab-runner-sg${local.name_suffix}"
+  })
+
+  lifecycle {
+    precondition {
+      condition     = var.vpc_id != null && var.vpc_id != ""
+      error_message = "vpc_id is required when create_security_group is true."
+    }
+  }
+}
+
+# Allow all traffic within the security group (manager <-> runners)
+resource "aws_security_group_rule" "gitlab_runner_self_ingress" {
+  count             = var.enabled && local.create_security_group ? 1 : 0
+  type              = "ingress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  self              = true
+  security_group_id = aws_security_group.gitlab_runner[0].id
+  description       = "Allow all traffic between manager and runners"
+}
+
+# Allow all outbound traffic
+resource "aws_security_group_rule" "gitlab_runner_egress" {
+  count             = var.enabled && local.create_security_group ? 1 : 0
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.gitlab_runner[0].id
+  description       = "Allow all outbound traffic"
+}
+
 resource "aws_iam_policy" "gitlab_runner_manager_policy" {
   count  = var.enabled && var.create_manager ? 1 : 0
   name   = local.iam_policy_name
@@ -37,12 +80,52 @@ resource "aws_iam_role_policy_attachments_exclusive" "gitlab_runner_manager" {
   ]
 }
 
+# IAM resources for ASG runners (created by default with AdministratorAccess)
+# Only created when asg_iam_instance_profile is not provided
+resource "aws_iam_role" "gitlab_runner_asg_role" {
+  count = var.enabled && var.asg_iam_instance_profile == null ? 1 : 0
+  name  = "gitlab-runner-asg-role${local.name_suffix}"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+
+  tags = merge(var.tags, {
+    Name = "gitlab-runner-asg-role${local.name_suffix}"
+  })
+}
+
+resource "aws_iam_instance_profile" "gitlab_runner_asg_profile" {
+  count = var.enabled && var.asg_iam_instance_profile == null ? 1 : 0
+  name  = "gitlab-runner-asg-profile${local.name_suffix}"
+  role  = aws_iam_role.gitlab_runner_asg_role[0].name
+
+  tags = merge(var.tags, {
+    Name = "gitlab-runner-asg-profile${local.name_suffix}"
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "gitlab_runner_asg_admin" {
+  count      = var.enabled && var.asg_iam_instance_profile == null ? 1 : 0
+  role       = aws_iam_role.gitlab_runner_asg_role[0].name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
 resource "aws_launch_template" "gitlab_runner" {
   count    = var.enabled ? 1 : 0
   image_id = local.asg_runners_ami
   # Only set instance_type when not using attribute-based instance selection
   instance_type          = var.use_attribute_based_instance_selection ? null : var.asg_runners_ec2_type
-  vpc_security_group_ids = var.asg_security_groups
+  vpc_security_group_ids = local.asg_security_groups
   # Note: instance_market_options removed - spot/on-demand mix is controlled by mixed_instances_policy
 
   lifecycle {
@@ -52,12 +135,8 @@ resource "aws_launch_template" "gitlab_runner" {
     }
   }
 
-  dynamic "iam_instance_profile" {
-    for_each = var.asg_iam_instance_profile != null ? [var.asg_iam_instance_profile] : []
-    content {
-      arn  = startswith(iam_instance_profile.value, "arn:") ? iam_instance_profile.value : null
-      name = startswith(iam_instance_profile.value, "arn:") ? null : iam_instance_profile.value
-    }
+  iam_instance_profile {
+    name = local.asg_iam_instance_profile_name
   }
 
   dynamic "tag_specifications" {
@@ -160,9 +239,8 @@ resource "aws_instance" "gitlab_runner" {
   instance_type          = var.manager_ec2_type
   iam_instance_profile   = aws_iam_instance_profile.gitlab_runner_manager_profile[0].name
   subnet_id              = var.asg_subnets[0]
-  vpc_security_group_ids = var.manager_security_groups
+  vpc_security_group_ids = local.manager_security_groups
   # Manager instance is always on-demand (no instance_market_options)
-  # vpc_security_group_ids = [aws_security_group.allow_ssh_docker.id]
   tags = merge(var.tags, {
     Name = "Gitlab runner autoscaling manager${local.name_suffix}"
   })

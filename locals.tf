@@ -7,6 +7,24 @@ locals {
   iam_role_name    = "gitlab-runner-manager-role${local.name_suffix}"
   iam_profile_name = "gitlab-runner-profile${local.name_suffix}"
 
+  # Determine if we should create security group:
+  # - If explicitly set (true/false), use that value
+  # - If null (default), create when either ASG or manager has no custom SGs
+  #   This ensures manager and runners can always communicate through the shared SG
+  create_security_group = var.create_security_group != null ? var.create_security_group : (
+    length(var.asg_security_groups) == 0 || length(var.manager_security_groups) == 0
+  )
+
+  # Combined security groups: module-created SG + user-provided SGs
+  module_security_group = var.enabled && local.create_security_group ? [aws_security_group.gitlab_runner[0].id] : []
+  asg_security_groups   = concat(local.module_security_group, var.asg_security_groups)
+  manager_security_groups = concat(local.module_security_group, var.manager_security_groups)
+
+  # IAM instance profile for ASG runners: use module-created or user-provided
+  asg_iam_instance_profile_name = var.asg_iam_instance_profile != null ? var.asg_iam_instance_profile : (
+    var.enabled ? aws_iam_instance_profile.gitlab_runner_asg_profile[0].name : null
+  )
+
   base_policy = var.enabled ? templatefile("${path.module}/policies/instance-docker-autoscaler-policy.json.tftpl",
     {
       autoscaling_group_arn  = aws_autoscaling_group.gitlab_runners[0].arn

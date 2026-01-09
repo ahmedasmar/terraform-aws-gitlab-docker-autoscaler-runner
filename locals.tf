@@ -49,6 +49,12 @@ locals {
     ) : jsondecode(local.base_policy)
   ) : null
 
+  manager_ami_ssm_parameter_name_effective = var.manager_ami_ssm_parameter_name != null ? var.manager_ami_ssm_parameter_name : (
+    contains(data.aws_ec2_instance_type.manager.supported_architectures, "arm64") ?
+    "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64" :
+    "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+  )
+
   asg_runners_ami  = var.asg_runners_ami != null ? var.asg_runners_ami : data.aws_ami.latest_amazon_ecs_linux_2023.id
   concurrent_limit = var.asg_max_size * var.capacity_per_instance
 

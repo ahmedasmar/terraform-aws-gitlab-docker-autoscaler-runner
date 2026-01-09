@@ -50,6 +50,12 @@ variable "manager_ec2_type" {
   default     = "t4g.small"
 }
 
+variable "manager_ami_ssm_parameter_name" {
+  type        = string
+  description = "SSM Parameter name containing the AMI ID for the manager instance. When null, auto-selects an AL2023 parameter based on manager_ec2_type architecture."
+  default     = null
+}
+
 variable "asg_runners_ami" {
   type        = string
   description = "AMI used in ASG launch template to scale out runners, MUST HAVE DOCKER ENGINE INSTALLED"

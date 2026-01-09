@@ -115,7 +115,8 @@ module "gitlab_runner" {
 | `auth_token` | GitLab runner authentication token | `string` | `null` |
 | `name_prefix` | Prefix for resource names | `string` | `""` |
 | `create_manager` | Create GitLab runner manager EC2 instance | `bool` | `true` |
-| `manager_ec2_type` | Manager instance type | `string` | `"t2.small"` |
+| `manager_ec2_type` | Manager instance type | `string` | `"t4g.small"` |
+| `manager_ami_ssm_parameter_name` | SSM parameter name with the manager AMI ID. When null, auto-selects AL2023 parameter based on manager EC2 architecture | `string` | `null` |
 | `asg_runners_ami` | AMI for runner instances (must have Docker) | `string` | `null` |
 | `enable_s3_cache` | Enable S3 cache bucket | `bool` | `true` |
 | `s3_cache_expiration_days` | S3 cache object expiration | `number` | `30` |

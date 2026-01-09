@@ -9,10 +9,10 @@ locals {
 
   # Determine if we should create security group:
   # - If explicitly set (true/false), use that value
-  # - If null (default), create when either ASG or manager has no custom SGs
-  #   This ensures manager and runners can always communicate through the shared SG
+  # - If null (default), only create when BOTH are empty (backward compatible)
+  #   If user provides any custom SGs, they're managing security themselves
   create_security_group = var.create_security_group != null ? var.create_security_group : (
-    length(var.asg_security_groups) == 0 || length(var.manager_security_groups) == 0
+    length(var.asg_security_groups) == 0 && length(var.manager_security_groups) == 0
   )
 
   subnet_vpc_ids          = [for subnet in data.aws_subnet.asg : subnet.vpc_id]

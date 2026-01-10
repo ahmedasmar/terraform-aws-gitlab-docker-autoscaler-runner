@@ -56,6 +56,24 @@ variable "manager_ami_ssm_parameter_name" {
   default     = null
 }
 
+variable "docker_privileged" {
+  type        = bool
+  description = "Run Docker executor in privileged mode for build containers."
+  default     = true
+}
+
+variable "docker_cert_path" {
+  type        = string
+  description = "Path to Docker TLS certificates on the manager host. Added to runner docker volumes and passed via --docker-cert-path. Set to null or empty to disable."
+  default     = "/certs/client"
+}
+
+variable "docker_volumes" {
+  type        = list(string)
+  description = "Additional Docker volumes for build containers (e.g., /cache, /var/run/docker.sock)."
+  default     = []
+}
+
 variable "asg_runners_ami" {
   type        = string
   description = "AMI used in ASG launch template to scale out runners, MUST HAVE DOCKER ENGINE INSTALLED"

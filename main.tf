@@ -257,6 +257,9 @@ resource "aws_instance" "gitlab_runner" {
       concurrent_limit       = local.concurrent_limit
       max_instances          = var.asg_max_size
       capacity_per_instance  = var.capacity_per_instance
+      docker_privileged      = var.docker_privileged
+      docker_cert_path       = local.docker_cert_path_effective
+      docker_volumes         = local.manager_docker_volumes
 
   })
   lifecycle {

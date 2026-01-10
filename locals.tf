@@ -49,6 +49,16 @@ locals {
     ) : jsondecode(local.base_policy)
   ) : null
 
+  docker_cert_path_effective = (
+    var.docker_cert_path != null && var.docker_cert_path != "" ?
+    var.docker_cert_path :
+    null
+  )
+  manager_docker_volumes = distinct(concat(
+    var.docker_volumes,
+    local.docker_cert_path_effective != null ? [local.docker_cert_path_effective] : []
+  ))
+
   manager_ami_ssm_parameter_name_effective = var.manager_ami_ssm_parameter_name != null ? var.manager_ami_ssm_parameter_name : (
     contains(data.aws_ec2_instance_type.manager.supported_architectures, "arm64") ?
     "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64" :

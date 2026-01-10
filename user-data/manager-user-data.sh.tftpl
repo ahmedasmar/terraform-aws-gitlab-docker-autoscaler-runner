@@ -58,15 +58,15 @@ gitlab-runner register \
   --token ${auth_token} \
   --executor docker-autoscaler \
   --docker-image alpine:latest \
-%{ if docker_privileged }
+%{~ if docker_privileged }
   --docker-privileged \
-%{ endif }
-%{ if docker_cert_path != null }
+%{~ endif }
+%{~ if docker_cert_path != null }
   --docker-cert-path '${docker_cert_path}' \
-%{ endif }
-%{ for volume in docker_volumes }
+%{~ endif }
+%{~ for volume in docker_volumes }
   --docker-volumes '${volume}' \
-%{ endfor }
+%{~ endfor }
   --cache-type s3 \
   --cache-shared \
   --cache-path gitlab-cache \
@@ -82,15 +82,15 @@ gitlab-runner register \
   --token ${auth_token} \
   --executor docker-autoscaler \
   --docker-image alpine:latest \
-%{ if docker_privileged }
+%{~ if docker_privileged }
   --docker-privileged \
-%{ endif }
-%{ if docker_cert_path != null }
+%{~ endif }
+%{~ if docker_cert_path != null }
   --docker-cert-path '${docker_cert_path}' \
-%{ endif }
-%{ for volume in docker_volumes }
+%{~ endif }
+%{~ for volume in docker_volumes }
   --docker-volumes '${volume}' \
-%{ endfor }
+%{~ endfor }
   --description "GitLab Runner" \
 
 %{ endif }

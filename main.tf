@@ -236,7 +236,7 @@ resource "aws_autoscaling_group" "gitlab_runners" {
 
 resource "aws_instance" "gitlab_runner" {
   count                  = var.enabled && var.create_manager && var.auth_token != null ? 1 : 0
-  ami                    = data.aws_ssm_parameter.manager_ami.value
+  ami                    = data.aws_ssm_parameter.manager_ami[0].value
   instance_type          = var.manager_ec2_type
   iam_instance_profile   = aws_iam_instance_profile.gitlab_runner_manager_profile[0].name
   subnet_id              = var.asg_subnets[0]

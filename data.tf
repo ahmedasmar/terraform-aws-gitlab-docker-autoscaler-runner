@@ -3,6 +3,7 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 data "aws_ec2_instance_type" "manager" {
+  count         = var.enabled && var.create_manager ? 1 : 0
   instance_type = var.manager_ec2_type
 }
 
@@ -12,7 +13,8 @@ data "aws_subnet" "asg" {
 }
 
 data "aws_ssm_parameter" "manager_ami" {
-  name = local.manager_ami_ssm_parameter_name_effective
+  count = var.enabled && var.create_manager ? 1 : 0
+  name  = local.manager_ami_ssm_parameter_name_effective
 }
 
 data "aws_ami" "latest_amazon_ecs_linux_2023" {

@@ -29,8 +29,8 @@ variable "asg_max_size" {
 
 variable "vpc_id" {
   type        = string
-  description = "VPC ID"
-  default     = ""
+  description = "VPC ID. Required when create_security_group is true unless it can be derived from asg_subnets in a single VPC."
+  default     = null
 }
 
 variable "asg_subnets" {
@@ -47,7 +47,31 @@ variable "create_manager" {
 variable "manager_ec2_type" {
   type        = string
   description = "Gitlab runner manager ec2 instance type"
-  default     = "t2.small"
+  default     = "t4g.small"
+}
+
+variable "manager_ami_ssm_parameter_name" {
+  type        = string
+  description = "SSM Parameter name containing the AMI ID for the manager instance. When null, auto-selects an AL2023 parameter based on manager_ec2_type architecture."
+  default     = null
+}
+
+variable "docker_privileged" {
+  type        = bool
+  description = "Run Docker executor in privileged mode for build containers."
+  default     = true
+}
+
+variable "docker_cert_path" {
+  type        = string
+  description = "Path to Docker TLS certificates on the manager host. Added to runner docker volumes and passed via --docker-cert-path. Set to null or empty to disable."
+  default     = "/certs/client"
+}
+
+variable "docker_volumes" {
+  type        = list(string)
+  description = "Additional Docker volumes for build containers (e.g., /cache, /var/run/docker.sock)."
+  default     = []
 }
 
 variable "asg_runners_ami" {
@@ -66,16 +90,22 @@ variable "asg_runners_ec2_type" {
   }
 }
 
+variable "create_security_group" {
+  type        = bool
+  description = "Create a security group for manager and runner communication. Defaults to true only when asg_security_groups is empty (backward compatible). Set to true to force creation alongside custom security groups."
+  default     = null
+}
+
 variable "asg_security_groups" {
   type        = list(string)
-  description = "Security Groups of autoscaled runners"
-  default     = null
+  description = "Additional security groups for autoscaled runners. These are added alongside the module-created security group (if create_security_group is true)."
+  default     = []
 }
 
 variable "manager_security_groups" {
   type        = list(string)
-  description = "Security Groups of gitlab manager runner"
-  default     = null
+  description = "Additional security groups for gitlab manager runner. These are added alongside the module-created security group (if create_security_group is true)."
+  default     = []
 }
 
 variable "asg_iam_instance_profile" {

@@ -5,6 +5,13 @@
         {
             "Effect": "Allow",
             "Action": [
+                "s3:ListBucket"
+            ],
+            "Resource": "${s3_cache_bucket_arn}"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
                 "s3:PutObject",
                 "s3:GetObjectVersion",
                 "s3:GetObject",

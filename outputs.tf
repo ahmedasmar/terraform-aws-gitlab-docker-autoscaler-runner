@@ -67,3 +67,33 @@ output "iam_instance_profile_arn" {
   description = "ARN of the IAM instance profile for the GitLab Runner manager"
   value       = var.enabled && var.create_manager ? aws_iam_instance_profile.gitlab_runner_manager_profile[0].arn : null
 }
+
+output "security_group_id" {
+  description = "ID of the security group for GitLab Runner manager and ASG runners communication"
+  value       = var.enabled && local.create_security_group ? aws_security_group.gitlab_runner[0].id : null
+}
+
+output "security_group_arn" {
+  description = "ARN of the security group for GitLab Runner manager and ASG runners communication"
+  value       = var.enabled && local.create_security_group ? aws_security_group.gitlab_runner[0].arn : null
+}
+
+output "asg_iam_role_name" {
+  description = "Name of the IAM role for ASG runners"
+  value       = var.enabled && var.asg_iam_instance_profile == null ? aws_iam_role.gitlab_runner_asg_role[0].name : null
+}
+
+output "asg_iam_role_arn" {
+  description = "ARN of the IAM role for ASG runners"
+  value       = var.enabled && var.asg_iam_instance_profile == null ? aws_iam_role.gitlab_runner_asg_role[0].arn : null
+}
+
+output "asg_iam_instance_profile_name" {
+  description = "Name of the IAM instance profile for ASG runners"
+  value       = var.enabled && var.asg_iam_instance_profile == null ? aws_iam_instance_profile.gitlab_runner_asg_profile[0].name : null
+}
+
+output "asg_iam_instance_profile_arn" {
+  description = "ARN of the IAM instance profile for ASG runners"
+  value       = var.enabled && var.asg_iam_instance_profile == null ? aws_iam_instance_profile.gitlab_runner_asg_profile[0].arn : null
+}
